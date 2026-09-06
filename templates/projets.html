@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Espace{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>📋 Nos projets</h1>
+</div>
+
+<form class="projet-form" id="projet-form" action="{{ url_for('creer_projet') }}" method="POST">
+    <input type="text" name="titre" placeholder="Titre du projet (ex: Voyage au Japon)" required>
+    <input type="text" name="description" placeholder="Description (optionnel)">
+    <button type="submit">Ajouter</button>
+</form>
+
+<div class="kanban" id="kanban">
+    <div class="kanban-col" data-statut="a_faire">
+        <h3>À faire</h3>
+        <div class="kanban-cards" id="col-a_faire">
+            {% for p in projets if p.statut == 'a_faire' %}
+            {% include "_projet_card.html" %}
+            {% endfor %}
+        </div>
+    </div>
+    <div class="kanban-col" data-statut="en_cours">
+        <h3>En cours</h3>
+        <div class="kanban-cards" id="col-en_cours">
+            {% for p in projets if p.statut == 'en_cours' %}
+            {% include "_projet_card.html" %}
+            {% endfor %}
+        </div>
+    </div>
+    <div class="kanban-col" data-statut="termine">
+        <h3>Terminé</h3>
+        <div class="kanban-cards" id="col-termine">
+            {% for p in projets if p.statut == 'termine' %}
+            {% include "_projet_card.html" %}
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const socket = io();
+
+    function renderCard(p) {
+        const div = document.createElement('div');
+        div.className = 'kanban-card';
+        div.dataset.id = p.id;
+        div.innerHTML = `
+            <h4>${p.titre}</h4>
+            ${p.description ? `<p>${p.description}</p>` : ''}
+            <span class="projet-auteur">par ${p.createur_nom}</span>
+            <div class="projet-actions">
+                <select onchange="changerStatut(${p.id}, this.value)">
+                    <option value="a_faire" ${p.statut === 'a_faire' ? 'selected' : ''}>À faire</option>
+                    <option value="en_cours" ${p.statut === 'en_cours' ? 'selected' : ''}>En cours</option>
+                    <option value="termine" ${p.statut === 'termine' ? 'selected' : ''}>Terminé</option>
+                </select>
+            </div>
+        `;
+        return div;
+    }
+
+    function changerStatut(id, statut) {
+        fetch(`/projets/${id}/statut`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ statut: statut })
+        });
+    }
+
+    socket.on('nouveau_projet', (p) => {
+        document.getElementById('col-a_faire').appendChild(renderCard(p));
+    });
+
+    socket.on('projet_maj', (p) => {
+        const existing = document.querySelector(`.kanban-card[data-id="${p.id}"]`);
+        if (existing) existing.remove();
+        document.getElementById('col-' + p.statut).appendChild(renderCard(p));
+    });
+</script>
+{% endblock %}

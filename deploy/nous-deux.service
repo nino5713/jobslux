@@ -1,0 +1,21 @@
+[Unit]
+Description=Espace prive (nous-deux)
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/nous-deux
+Environment="SECRET_KEY=CHANGE_MOI_CLE_ALEATOIRE_LONGUE"
+Environment="MOT_DE_CODE=etoile"
+ExecStart=/var/www/nous-deux/venv/bin/python /var/www/nous-deux/app.py
+Restart=always
+RestartSec=3
+
+# Sécurité de base
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

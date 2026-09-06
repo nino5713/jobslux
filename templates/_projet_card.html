@@ -1,0 +1,12 @@
+<div class="kanban-card" data-id="{{ p.id }}">
+    <h4>{{ p.titre }}</h4>
+    {% if p.description %}<p>{{ p.description }}</p>{% endif %}
+    <span class="projet-auteur">par {{ p.createur.nom }}</span>
+    <div class="projet-actions">
+        <select onchange="changerStatut({{ p.id }}, this.value)">
+            <option value="a_faire" {{ 'selected' if p.statut == 'a_faire' }}>À faire</option>
+            <option value="en_cours" {{ 'selected' if p.statut == 'en_cours' }}>En cours</option>
+            <option value="termine" {{ 'selected' if p.statut == 'termine' }}>Terminé</option>
+        </select>
+    </div>
+</div>

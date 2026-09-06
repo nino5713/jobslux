@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="robots" content="noindex, nofollow, noarchive">
+    <title>{% block title %}Espace{% endblock %}</title>
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#6C63FF">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-192.png') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block head %}{% endblock %}
+</head>
+<body>
+    {% if current_user.is_authenticated %}
+    <nav class="navbar">
+        <div class="nav-brand">Espace</div>
+        <div class="nav-links">
+            <a href="{{ url_for('chat') }}" class="{{ 'active' if request.endpoint == 'chat' }}">💬 Chat</a>
+            <a href="{{ url_for('galerie') }}" class="{{ 'active' if request.endpoint == 'galerie' }}">📷 Galerie</a>
+            <a href="{{ url_for('projets') }}" class="{{ 'active' if request.endpoint == 'projets' }}">📋 Projets</a>
+            <a href="{{ url_for('carte') }}" class="{{ 'active' if request.endpoint == 'carte' }}">📍 Distance</a>
+        </div>
+        <div class="nav-user">
+            <span class="user-badge" style="background:{{ current_user.couleur }}">{{ current_user.nom[0] }}</span>
+            <a href="{{ url_for('logout') }}" class="logout-link">Déconnexion</a>
+        </div>
+    </nav>
+    {% endif %}
+
+    <main class="content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-container">
+                    {% for category, message in messages %}
+                        <div class="flash flash-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    {% block scripts %}{% endblock %}
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register("{{ url_for('static', filename='service-worker.js') }}");
+        }
+    </script>
+</body>
+</html>

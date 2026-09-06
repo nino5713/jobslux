@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}Espace{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>📍 Notre distance</h1>
+</div>
+
+<div class="distance-card">
+    <div class="distance-value">
+        <span id="distance-number">{{ distance if distance is not none else '—' }}</span>
+        <span class="distance-unit">km</span>
+    </div>
+    <p class="distance-caption">
+        {% if autre and autre.ville %}
+            {{ autre.nom }} est à {{ autre.ville }}
+        {% else %}
+            En attente de la position de {{ autre.nom if autre else 'l\'autre' }}...
+        {% endif %}
+    </p>
+
+    <button id="btn-partager-position" class="btn-primary">Partager ma position</button>
+    <p id="statut-geoloc" class="statut-geoloc"></p>
+
+    <div class="derniere-maj">
+        <small id="derniere-maj-texte"></small>
+    </div>
+</div>
+
+<div class="info-box">
+    <p>💡 Ta position n'est utilisée que pour calculer la distance entre vous deux. Elle n'est jamais partagée ailleurs.</p>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const socket = io();
+    const btn = document.getElementById('btn-partager-position');
+    const statutEl = document.getElementById('statut-geoloc');
+    const distanceEl = document.getElementById('distance-number');
+    const majEl = document.getElementById('derniere-maj-texte');
+
+    let watchId = null;
+
+    btn.addEventListener('click', () => {
+        if (!navigator.geolocation) {
+            statutEl.textContent = "La géolocalisation n'est pas supportée par ce navigateur.";
+            return;
+        }
+
+        if (watchId !== null) {
+            navigator.geolocation.clearWatch(watchId);
+            watchId = null;
+            btn.textContent = 'Partager ma position';
+            statutEl.textContent = 'Partage de position arrêté.';
+            return;
+        }
+
+        statutEl.textContent = 'Demande de permission...';
+        watchId = navigator.geolocation.watchPosition(
+            envoyerPosition,
+            (err) => {
+                statutEl.textContent = "Impossible d'accéder à ta position : " + err.message;
+            },
+            { enableHighAccuracy: true, maximumAge: 30000, timeout: 15000 }
+        );
+        btn.textContent = 'Arrêter le partage';
+    });
+
+    async function envoyerPosition(position) {
+        const { latitude, longitude } = position.coords;
+        let ville = null;
+
+        // Reverse geocoding léger via Nominatim (OpenStreetMap), optionnel
+        try {
+            const resp = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10`);
+            const data = await resp.json();
+            ville = data.address?.city || data.address?.town || data.address?.village || null;
+        } catch (e) {
+            // pas grave si ça échoue, on continue sans le nom de la ville
+        }
+
+        const resp = await fetch('/api/position', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ latitude, longitude, ville })
+        });
+        const data = await resp.json();
+
+        if (data.distance_km !== null && data.distance_km !== undefined) {
+            distanceEl.textContent = data.distance_km;
+        }
+        statutEl.textContent = 'Position partagée ✓';
+        majEl.textContent = 'Dernière mise à jour : ' + new Date().toLocaleTimeString('fr-FR');
+    }
+
+    socket.on('position_maj', (data) => {
+        if (data.distance_km !== null && data.distance_km !== undefined) {
+            distanceEl.textContent = data.distance_km;
+            majEl.textContent = 'Mis à jour : ' + new Date().toLocaleTimeString('fr-FR');
+        }
+    });
+</script>
+{% endblock %}

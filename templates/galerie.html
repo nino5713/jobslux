@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Espace{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>📷 Notre galerie</h1>
+</div>
+
+<form class="upload-form" action="{{ url_for('upload_photo') }}" method="POST" enctype="multipart/form-data">
+    <input type="file" name="photo" accept="image/*" required>
+    <input type="text" name="legende" placeholder="Une légende (optionnel)">
+    <button type="submit">Ajouter la photo</button>
+</form>
+
+<div id="photo-grid" class="photo-grid">
+    {% for p in photos %}
+    <div class="photo-card" data-id="{{ p.id }}">
+        <img src="{{ url_for('static', filename='uploads/' + p.filename) }}" alt="{{ p.legende or 'photo' }}">
+        <div class="photo-meta">
+            <span>{{ p.uploader.nom }}</span>
+            {% if p.legende %}<p>{{ p.legende }}</p>{% endif %}
+            <span class="photo-date">{{ p.timestamp.strftime('%d/%m/%Y') }}</span>
+        </div>
+    </div>
+    {% else %}
+    <p class="empty-state">Aucune photo pour l'instant. Ajoutez la première !</p>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const socket = io();
+    socket.on('nouvelle_photo', (photo) => {
+        const grid = document.getElementById('photo-grid');
+        const emptyState = grid.querySelector('.empty-state');
+        if (emptyState) emptyState.remove();
+
+        const div = document.createElement('div');
+        div.className = 'photo-card';
+        div.dataset.id = photo.id;
+        div.innerHTML = `
+            <img src="/static/uploads/${photo.filename}" alt="${photo.legende || 'photo'}">
+            <div class="photo-meta">
+                <span>${photo.uploader_nom}</span>
+                ${photo.legende ? `<p>${photo.legende}</p>` : ''}
+                <span class="photo-date">à l'instant</span>
+            </div>
+        `;
+        grid.prepend(div);
+    });
+</script>
+{% endblock %}
