@@ -46,7 +46,7 @@ db.init_app(app)
 login_manager = LoginManager(app)
 login_manager.login_view = "login"
 
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet")
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
 
 ROOM = "notre-room"  # room unique partagée par les deux utilisateurs
 
@@ -378,4 +378,10 @@ def init_db():
 if __name__ == "__main__":
     init_db()
     debug_mode = os.environ.get("FLASK_DEBUG", "0") == "1"
-    socketio.run(app, host="0.0.0.0", port=5001, debug=debug_mode)
+    socketio.run(
+        app,
+        host="0.0.0.0",
+        port=5001,
+        debug=debug_mode,
+        allow_unsafe_werkzeug=True,
+    )
