@@ -12,14 +12,36 @@
 
 * { box-sizing: border-box; }
 
+html, body {
+    height: 100%;
+}
+
 body {
     margin: 0;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     background: var(--bg);
     color: var(--text);
     min-height: 100vh;
+    min-height: 100dvh;
     display: flex;
     flex-direction: column;
+}
+
+/* Sur la page chat : on fige la hauteur exacte du viewport (compatible clavier
+   mobile et barre d'adresse) et on laisse les enfants gérer leur propre scroll,
+   pour que le champ de saisie reste toujours visible en bas. */
+body.chat-page {
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+}
+body.chat-page .content {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 12px 16px;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
 }
 
 /* Navbar */
@@ -106,9 +128,15 @@ body {
 .flash-success { background: #E4F8EE; color: #1E8A55; }
 
 /* Chat */
-.chat-container { display: flex; flex-direction: column; height: calc(100vh - 140px); }
+.chat-container {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
 .messages-box {
     flex: 1; overflow-y: auto; padding: 12px 4px; display: flex; flex-direction: column; gap: 14px;
+    min-height: 0;
 }
 .message { display: flex; flex-direction: column; max-width: 75%; }
 .message.mine { align-self: flex-end; align-items: flex-end; }
@@ -121,7 +149,9 @@ body {
 .message.mine .msg-bubble { color: white; border: none; }
 .msg-time { font-size: 0.68rem; color: var(--text-light); margin-top: 3px; }
 .typing-indicator { height: 20px; font-size: 0.8rem; color: var(--text-light); font-style: italic; padding-left: 4px; }
-.chat-form { display: flex; gap: 8px; padding-top: 8px; }
+.chat-form {
+    display: flex; gap: 8px; padding-top: 8px; flex-shrink: 0;
+}
 .chat-form input {
     flex: 1; padding: 12px 16px; border-radius: 999px; border: 1px solid var(--border); font-size: 1rem;
 }
